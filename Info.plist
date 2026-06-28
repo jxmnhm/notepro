@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>            <string>Notepro</string>
+    <key>CFBundleDisplayName</key>     <string>Notepro</string>
+    <key>CFBundleIdentifier</key>      <string>com.floatboat.notepro</string>
+    <key>CFBundleVersion</key>         <string>9</string>
+    <key>CFBundleShortVersionString</key><string>0.7.0</string>
+    <key>CFBundlePackageType</key>     <string>APPL</string>
+    <key>CFBundleExecutable</key>      <string>Notepro</string>
+    <key>CFBundleIconFile</key>        <string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key>  <string>13.0</string>
+    <key>LSUIElement</key>             <true/>
+    <key>NSHumanReadableCopyright</key><string>Notepro</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Notepro 需要访问 Apple Notes 来读取并处理你选中的笔记内容。</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Notepro 需要访问「提醒事项」来把待办清单添加为系统提醒。</string>
+</dict>
+</plist>

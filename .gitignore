@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift / Xcode / SPM
+.build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+.swiftpm/
+
+# Build outputs / releases
+dist/
+build/
+*.app
+*.dmg
+*.zip
+*.tar.gz
+*.xcarchive
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.p12
+*.key
+*.crt
+*.cer
+*.mobileprovision
+*.provisionprofile
+secrets.*
+credentials.*
+
+# Backups / local archives
+backups/
+_backup_*/
+*_backup_*/
+*.bak
+*.tmp
+
+# Python / misc
+__pycache__/
+.venv/
+venv/

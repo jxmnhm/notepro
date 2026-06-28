@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notepro · 住进备忘录的 AI 助手</title>
+<style>
+  :root{
+    --bg:#0b0b12; --bg2:#11111c; --card:#161622; --line:rgba(255,255,255,.08);
+    --txt:#f2f2f7; --dim:#a3a3b2; --dim2:#6f6f82;
+    --g1:#7359f2; --g2:#4d8bfb; --accent:#9b7bff;
+    --radius:20px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang SC",sans-serif;
+    background:var(--bg); color:var(--txt); line-height:1.65; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .grad-text{background:linear-gradient(120deg,var(--g1),var(--g2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+  /* 背景光晕 */
+  .glow{position:fixed;border-radius:50%;filter:blur(120px);opacity:.45;z-index:0;pointer-events:none}
+  .glow.a{width:520px;height:520px;background:var(--g1);top:-160px;left:-120px}
+  .glow.b{width:480px;height:480px;background:var(--g2);top:240px;right:-160px;opacity:.35}
+
+  /* 导航 */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:saturate(180%) blur(20px);
+    background:rgba(11,11,18,.6);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px}
+  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));
+    display:grid;place-items:center;font-size:16px;box-shadow:0 4px 18px rgba(115,89,242,.5)}
+  .nav-links{display:flex;gap:28px;font-size:14px;color:var(--dim)}
+  .nav-links a:hover{color:var(--txt)}
+  .nav-cta{background:linear-gradient(135deg,var(--g1),var(--g2));padding:9px 18px;border-radius:10px;
+    font-size:14px;font-weight:600;color:#fff;transition:transform .2s,box-shadow .2s}
+  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(115,89,242,.45)}
+
+  /* Hero */
+  header{position:relative;z-index:1;text-align:center;padding:110px 0 80px}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--line);
+    border-radius:999px;font-size:13px;color:var(--dim);background:rgba(255,255,255,.03);margin-bottom:28px}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#36d399;box-shadow:0 0 10px #36d399}
+  h1{font-size:64px;line-height:1.08;font-weight:700;letter-spacing:-1.5px;margin-bottom:22px}
+  .sub{font-size:20px;color:var(--dim);max-width:640px;margin:0 auto 38px}
+  .cta-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .btn{padding:15px 30px;border-radius:13px;font-size:15.5px;font-weight:600;transition:transform .2s,box-shadow .2s;cursor:pointer;border:none}
+  .btn-primary{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;box-shadow:0 10px 30px rgba(115,89,242,.4)}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(115,89,242,.55)}
+  .btn-ghost{background:rgba(255,255,255,.05);color:var(--txt);border:1px solid var(--line)}
+  .btn-ghost:hover{background:rgba(255,255,255,.1);transform:translateY(-3px)}
+  .hero-note{margin-top:18px;font-size:13px;color:var(--dim2)}
+
+  /* 模拟窗口 */
+  .demo{position:relative;z-index:1;margin:60px auto 0;max-width:760px}
+  .window{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    box-shadow:0 40px 90px rgba(0,0,0,.55)}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .tl{width:12px;height:12px;border-radius:50%}
+  .tl.r{background:#ff5f57}.tl.y{background:#febc2e}.tl.g{background:#28c840}
+  .titlebar span{margin-left:8px;font-size:13px;color:var(--dim2)}
+  .note-body{padding:26px 28px;font-size:15px;color:var(--dim);min-height:200px;position:relative}
+  .note-body p{margin-bottom:10px}
+  .note-body .typed{color:var(--txt)}
+  .float-btn{position:absolute;right:22px;bottom:22px;width:48px;height:48px;border-radius:50%;
+    background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-size:20px;
+    box-shadow:0 8px 24px rgba(115,89,242,.55);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  .slash-menu{position:absolute;right:80px;bottom:30px;background:#1d1d2b;border:1px solid var(--line);
+    border-radius:12px;padding:6px;width:170px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+  .slash-menu .item{padding:8px 12px;border-radius:8px;font-size:13.5px;color:var(--dim);display:flex;align-items:center;gap:8px}
+  .slash-menu .item:hover,.slash-menu .item.on{background:rgba(115,89,242,.22);color:var(--txt)}
+
+  /* 区块通用 */
+  section{position:relative;z-index:1;padding:90px 0}
+  .eyebrow{text-align:center;color:var(--accent);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+  h2{text-align:center;font-size:42px;font-weight:700;letter-spacing:-1px;margin-bottom:14px}
+  .sec-sub{text-align:center;color:var(--dim);font-size:17px;max-width:560px;margin:0 auto 56px}
+
+  /* 特性卡 */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;
+    transition:transform .25s,border-color .25s}
+  .card:hover{transform:translateY(-6px);border-color:rgba(155,123,255,.4)}
+  .card .ico{width:46px;height:46px;border-radius:12px;background:rgba(115,89,242,.15);display:grid;place-items:center;font-size:22px;margin-bottom:18px}
+  .card h3{font-size:18px;margin-bottom:8px}
+  .card p{font-size:14.5px;color:var(--dim)}
+
+  /* 用法步骤 */
+  .ways{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;margin:0 auto}
+  .way{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:32px}
+  .way .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:rgba(155,123,255,.13);
+    padding:4px 12px;border-radius:999px;margin-bottom:16px}
+  .way h3{font-size:21px;margin-bottom:10px}
+  .way p{font-size:15px;color:var(--dim)}
+
+  /* 动作表 */
+  .acts{max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .act{display:flex;align-items:center;gap:18px;padding:20px 26px;border-bottom:1px solid var(--line)}
+  .act:last-child{border-bottom:none}
+  .act .e{font-size:24px;width:34px;text-align:center}
+  .act .t{flex:1}
+  .act .t b{font-size:16px;display:block;margin-bottom:2px}
+  .act .t span{font-size:13.5px;color:var(--dim)}
+  .act .kind{font-size:12px;padding:5px 11px;border-radius:8px;font-weight:600;white-space:nowrap}
+  .kind.rep{background:rgba(77,139,251,.15);color:#7eb0ff}
+  .kind.gen{background:rgba(155,123,255,.15);color:var(--accent)}
+
+  /* 隐私 */
+  .privacy{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .pcard{text-align:center;padding:28px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+  .pcard .e{font-size:28px;margin-bottom:12px}
+  .pcard b{display:block;font-size:15px;margin-bottom:6px}
+  .pcard p{font-size:13px;color:var(--dim)}
+
+  /* CTA 区 */
+  .final{text-align:center;background:linear-gradient(135deg,rgba(115,89,242,.16),rgba(77,139,251,.1));
+    border:1px solid var(--line);border-radius:28px;padding:64px 30px;max-width:860px;margin:0 auto}
+  .final h2{font-size:38px;margin-bottom:14px}
+  .final p{color:var(--dim);font-size:17px;margin-bottom:30px}
+
+  footer{text-align:center;padding:50px 0 60px;color:var(--dim2);font-size:13px;border-top:1px solid var(--line);margin-top:90px}
+
+  /* 滚动浮现 */
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s,transform .7s}
+  .reveal.in{opacity:1;transform:none}
+
+  @media(max-width:860px){
+    h1{font-size:42px}.grid,.ways,.privacy{grid-template-columns:1fr}
+    .nav-links{display:none}h2{font-size:32px}
+  }
+</style>
+</head>
+<body>
+  <div class="glow a"></div>
+  <div class="glow b"></div>
+
+  <nav>
+    <div class="wrap">
+      <div class="brand"><div class="logo">✨</div>Notepro</div>
+      <div class="nav-links">
+        <a href="#features">功能</a>
+        <a href="#how">用法</a>
+        <a href="#actions">动作</a>
+        <a href="#privacy">隐私</a>
+      </div>
+      <a href="#get" class="nav-cta">免费下载</a>
+    </div>
+  </nav>
+
+  <header>
+    <div class="wrap">
+      <div class="badge"><span class="dot"></span>原生 macOS 应用 · v0.7.0 · 不打扰你的写作</div>
+      <h1>让 AI <span class="grad-text">住进备忘录</span></h1>
+      <p class="sub">行首打 <b style="color:var(--txt)">#</b> 立刻变标题，选中文字一键处理，或输入 <b style="color:var(--txt)">/</b> 唤出命令。润色、翻译、总结、续写——就在你写笔记的当下完成，无需复制粘贴、无需切换窗口。</p>
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="document.getElementById('get').scrollIntoView()">↓ 下载 Notepro</button>
+        <a href="#how" class="btn btn-ghost">看看怎么用</a>
+      </div>
+      <div class="hero-note">macOS 13+ · Apple Silicon &amp; Intel · 约 580K</div>
+
+      <!-- 模拟备忘录窗口 -->
+      <div class="demo reveal">
+        <div class="window">
+          <div class="titlebar">
+            <div class="tl r"></div><div class="tl y"></div><div class="tl g"></div>
+            <span>备忘录 — 我的笔记</span>
+          </div>
+          <div class="note-body">
+            <p class="typed">下周产品发布会的准备事项：</p>
+            <p class="typed">确认场地、邀请媒体、准备演示 Demo、彩排流程<span id="caret">/</span></p>
+            <div class="slash-menu">
+              <div class="item">✨ 总结要点</div>
+              <div class="item on">✅ 提取待办</div>
+              <div class="item">🌐 翻译成英文</div>
+              <div class="item">✍️ 润色文字</div>
+            </div>
+            <div class="float-btn">✨</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="eyebrow reveal">Features</div>
+      <h2 class="reveal">为写作流而生</h2>
+      <p class="sec-sub reveal">不是又一个聊天框，而是嵌进备忘录的 AI 能力。</p>
+      <div class="grid">
+        <div class="card reveal" style="border-color:rgba(155,123,255,.45)"><div class="ico">⚡️</div><h3>实时 Markdown <span style="font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 6px;vertical-align:middle">NEW</span></h3><p>行首打 <b>#</b> / <b>##</b> / <b>-[ ]</b> 加空格，备忘录里<b>立刻</b>变成原生标题、清单——所见即所得，不用碰菜单。</p></div>
+        <div class="card reveal"><div class="ico">📌</div><h3>就地浮动入口</h3><p>按钮只贴在备忘录窗口里，跟着它移动缩放；别的窗口盖住时也一起隐藏，绝不全局乱飘。</p></div>
+        <div class="card reveal"><div class="ico">⌨️</div><h3>斜杠命令</h3><p>写到一半输入 <b>/</b>，菜单在<b>文字光标处</b>即刻弹出，像 Notion 一样顺手。</p></div>
+        <div class="card reveal" style="border-color:rgba(155,123,255,.45)"><div class="ico">✅</div><h3>一键转复选框 <span style="font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 6px;vertical-align:middle">NEW</span></h3><p>复制一段 <b>- [ ]</b> / <b>-【】</b> 待办粘进备忘录，自动变原生圆圈复选框，中英文括号都认。</p></div>
+        <div class="card reveal" style="border-color:rgba(155,123,255,.45)"><div class="ico">⏰</div><h3>一键建提醒 <span style="font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 6px;vertical-align:middle">NEW</span></h3><p>提取出的待办，一键写入系统「提醒事项」App，不错过任何一件事。</p></div>
+        <div class="card reveal"><div class="ico">💬</div><h3>多轮对话窗</h3><p>总结后还能继续追问「再精简点」「换个语气」，它记得上下文，可拖动可缩放。</p></div>
+        <div class="card reveal"><div class="ico">🧩</div><h3>提示词管理</h3><p>动作菜单无限自定义——增删改、排序，自定义名字和提示词，调成你自己的趁手工具。</p></div>
+        <div class="card reveal"><div class="ico">🌊</div><h3>流式输出</h3><p>结果像打字一样实时冒出来，不用干等一整段。</p></div>
+        <div class="card reveal"><div class="ico">📊</div><h3>Markdown &amp; 表格</h3><p>标题、列表、任务清单、代码、表格都漂亮排版，一键复制或插回正文。</p></div>
+        <div class="card reveal"><div class="ico">🔒</div><h3>隐私优先</h3><p>API Key 只存本机，笔记只发往你自己配置的接口，用完即走。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="eyebrow reveal">How it works</div>
+      <h2 class="reveal">两种方式唤起 AI</h2>
+      <p class="sec-sub reveal">怎么顺手怎么来。</p>
+      <div class="ways">
+        <div class="way reveal">
+          <span class="tag">方式 A</span>
+          <h3>✨ 浮动按钮</h3>
+          <p>备忘录窗口右下角有个圆按钮。选中一段文字，点它，弹出菜单选动作——结果直接替换或弹窗显示。</p>
+        </div>
+        <div class="way reveal">
+          <span class="tag">方式 B</span>
+          <h3>/ 斜杠命令</h3>
+          <p>在备忘录里输入「/」，鼠标处立刻弹出命令菜单。适合写到一半，想就当前行或续写调用 AI。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="actions">
+    <div class="wrap">
+      <div class="eyebrow reveal">Actions</div>
+      <h2 class="reveal">五个动作，两种性格</h2>
+      <p class="sec-sub reveal"><span style="color:#7eb0ff">替换型</span>直接改正文，<span style="color:var(--accent)">生成型</span>弹窗不污染笔记。</p>
+      <div class="acts reveal">
+        <div class="act"><div class="e">✍️</div><div class="t"><b>润色文字</b><span>不改原意，让表达更通顺专业</span></div><div class="kind rep">替换正文</div></div>
+        <div class="act"><div class="e">🌐</div><div class="t"><b>翻译成英文 / 中文</b><span>自然流畅的双向翻译</span></div><div class="kind rep">替换正文</div></div>
+        <div class="act"><div class="e">➡️</div><div class="t"><b>续写</b><span>接着你的风格和主题往下写</span></div><div class="kind rep">替换正文</div></div>
+        <div class="act"><div class="e">📋</div><div class="t"><b>总结要点</b><span>提炼成清晰要点列表</span></div><div class="kind gen">弹窗</div></div>
+        <div class="act"><div class="e">✅</div><div class="t"><b>提取待办</b><span>抽成 Markdown 复选框清单</span></div><div class="kind gen">弹窗</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="wrap">
+      <div class="eyebrow reveal">Privacy</div>
+      <h2 class="reveal">你的笔记，只属于你</h2>
+      <p class="sec-sub reveal">嵌进系统，却不越界。</p>
+      <div class="privacy">
+        <div class="pcard reveal"><div class="e">🔑</div><b>Key 只存本机</b><p>API Key 保存在你的用户偏好里，不上传任何第三方。</p></div>
+        <div class="pcard reveal"><div class="e">👀</div><b>最小权限</b><p>仅在触发动作时使用辅助功能权限，斜杠监听只在备忘录前台生效。</p></div>
+        <div class="pcard reveal"><div class="e">📦</div><b>自包含</b><p>装进应用程序后与源码无关，删掉开发文件夹照常运行。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get">
+    <div class="wrap">
+      <div class="final reveal">
+        <h2>三分钟，让备忘录会 AI</h2>
+        <p>下载 → 拖进应用程序 → 填入 DeepSeek Key → 开写。</p>
+        <div class="cta-row">
+          <a href="dist/Notepro-0.7.0.dmg" class="btn btn-primary">↓ 下载 Notepro 0.7.0（.dmg）</a>
+          <a href="首次安装说明.md" class="btn btn-ghost">阅读安装说明</a>
+        </div>
+        <div class="hero-note">首次打开如被系统拦截，到「隐私与安全性」点「仍要打开」即可。</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Notepro v0.7.0 · 一个让 AI 住进备忘录的原生 macOS 应用<br>
+    Swift + AppKit · DeepSeek V4 · 由你掌控
+  </footer>
+
+<script>
+  // 滚动浮现
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')})},{threshold:.12});
+  document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%3*0.08)+'s';io.observe(el)});
+
+  // Hero 光晕随鼠标轻微视差
+  document.addEventListener('mousemove',e=>{
+    const x=(e.clientX/window.innerWidth-.5),y=(e.clientY/window.innerHeight-.5);
+    document.querySelector('.glow.a').style.transform=`translate(${x*30}px,${y*30}px)`;
+    document.querySelector('.glow.b').style.transform=`translate(${-x*30}px,${-y*30}px)`;
+  });
+
+  // 斜杠菜单选项轮播高亮
+  const items=document.querySelectorAll('.slash-menu .item');
+  let idx=1;
+  setInterval(()=>{items.forEach(i=>i.classList.remove('on'));idx=(idx+1)%items.length;items[idx].classList.add('on');},1400);
+
+  // 光标闪烁
+  const caret=document.getElementById('caret');
+  setInterval(()=>{caret.style.opacity=caret.style.opacity==='0'?'1':'0';},560);
+</script>
+</body>
+</html>
